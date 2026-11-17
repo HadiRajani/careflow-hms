@@ -52,6 +52,17 @@ class RoleAccessTest extends TestCase
         $this->get('/audit')->assertRedirect('/login');
     }
 
+    public function test_logged_in_user_opening_login_page_goes_to_own_home_page(): void
+    {
+        // Bug found while reading Laravel's source: by default the 'guest' middleware
+        // sent every logged-in user to /dashboard, so a nurse got a 403.
+        $nurse = User::factory()->create(['role' => 'nurse']);
+        $this->actingAs($nurse)->get('/login')->assertRedirect('/triage');
+
+        $frontDesk = User::factory()->create(['role' => 'front_desk']);
+        $this->actingAs($frontDesk)->get('/login')->assertRedirect('/patients');
+    }
+
     public function test_public_registration_is_disabled(): void
     {
         $this->get('/register')->assertNotFound();
