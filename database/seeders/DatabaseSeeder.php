@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DemoUserSeeder::class,
-            // SyntheticOpdSeeder::class,  // added in the seeding block (500+ visits over 30 days)
+            SyntheticOpdSeeder::class,   // ~600 synthetic visits over the last 30 days
         ]);
     }
 }

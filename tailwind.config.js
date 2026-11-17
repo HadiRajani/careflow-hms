@@ -12,7 +12,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                urdu: ['"Noto Naskh Arabic"', 'Inter', ...defaultTheme.fontFamily.sans],
             },
         },
     },

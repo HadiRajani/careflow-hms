@@ -103,7 +103,7 @@ class PatientController extends Controller
     {
         AuditLog::record('patient.viewed', $patient->id, $patient);
 
-        $visits = $patient->visits()->with('triage')->latest('arrived_at')->limit(10)->get();
+        $visits = $patient->visits()->with('triage.recorder')->latest('arrived_at')->limit(10)->get();
 
         return view('patients.show', ['patient' => $patient, 'visits' => $visits]);
     }

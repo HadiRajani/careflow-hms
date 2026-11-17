@@ -16,6 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureRole::class,
         ]);
 
+        // Our language middleware runs on every web page (English / Urdu).
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
+        // Hosting platforms (Railway etc.) sit behind a proxy: trust it so HTTPS and client IPs are correct.
+        $middleware->trustProxies(at: '*');
+
         // Laravel's built-in 'auth' middleware: where to send someone who is NOT logged in.
         $middleware->redirectGuestsTo('/login');
 

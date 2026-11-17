@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800">{{ __('Patients') }}</h2>
-            <a href="{{ route('patients.create') }}" class="rounded bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">
+            <a href="{{ route('patients.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700">
                 + {{ __('Register patient') }}
             </a>
         </div>
@@ -13,13 +13,13 @@
         <form method="GET" action="{{ route('patients.index') }}" class="flex gap-2">
             <input type="text" name="q" value="{{ $search }}" autofocus
                    placeholder="{{ __('Search by name, phone, CNIC or MRN') }}"
-                   class="flex-1 rounded border-gray-300 focus:border-teal-500 focus:ring-teal-500">
-            <button class="rounded bg-gray-800 px-4 py-2 text-sm font-semibold text-white">{{ __('Search') }}</button>
+                   class="flex-1 rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+            <button class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-white">{{ __('Search') }}</button>
         </form>
 
         {{-- Results --}}
         @if ($search !== '')
-            <div class="bg-white rounded shadow-sm overflow-x-auto">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-gray-50 text-gray-600 text-start">
                         <tr>

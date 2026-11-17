@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Karachi'),   // Pakistan time, so arrival/triage times and dashboard hours are local
 
     /*
     |--------------------------------------------------------------------------
