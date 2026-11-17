@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PatientController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,7 +25,10 @@ Route::middleware('auth')->group(function () {
 
     // Front desk AND nurse
     Route::middleware('role:front_desk,nurse')->group(function () {
-        Route::get('/patients', fn () => view('placeholder', ['title' => 'Patients']))->name('patients.index');
+        Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
+        Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
+        Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+        Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
     });
 
     // Nurse only

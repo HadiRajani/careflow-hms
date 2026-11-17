@@ -3,15 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use LogicException;
 
 /**
- * Append-only. Rows are written through App\Services\AuditLogger and are never updated or deleted by the app.
+ * Audit trail: who viewed or changed which patient record, and when.
+ *
+ * Write an entry from anywhere with one line:
+ *     AuditLog::record('patient.viewed', $patient->id);
+ *
+ * Rows are never edited or deleted (append-only).
  */
 class AuditLog extends Model
 {
-    public const UPDATED_AT = null;   // no updated_at column: an audit row never changes
+    const UPDATED_AT = null;   // no updated_at column: an audit row never changes
 
     protected $fillable = ['user_id', 'action', 'patient_id', 'subject_type', 'subject_id', 'meta', 'ip_address'];
 
@@ -20,19 +23,41 @@ class AuditLog extends Model
         return ['meta' => 'array', 'created_at' => 'datetime'];
     }
 
-    protected static function booted(): void
+    /**
+     * Save one audit entry for the logged-in user.
+     *   $action   what happened, e.g. 'patient.viewed', 'patient.created', 'triage.created'
+     *   $meta     small extra details (never full clinical data)
+     */
+    public static function record(string $action, ?int $patientId, ?Model $subject = null, array $meta = []): void
     {
-        // Defence in depth: block edits/deletes through Eloquent even if a future developer tries.
-        static::updating(fn () => throw new LogicException('Audit logs are append-only.'));
-        static::deleting(fn () => throw new LogicException('Audit logs are append-only.'));
+        self::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'patient_id' => $patientId,
+            'subject_type' => $subject ? class_basename($subject) : null,   // e.g. 'Visit'
+            'subject_id' => $subject?->id,
+            'meta' => $meta ?: null,
+            'ip_address' => request()->ip(),
+        ]);
     }
 
-    public function user(): BelongsTo
+    // Safety net: block editing or deleting audit rows through the app.
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \LogicException('Audit logs cannot be changed.');
+        });
+        static::deleting(function () {
+            throw new \LogicException('Audit logs cannot be deleted.');
+        });
+    }
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function patient(): BelongsTo
+    public function patient()
     {
         return $this->belongsTo(Patient::class);
     }

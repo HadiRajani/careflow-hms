@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
-            $table->string('mrn', 20)->unique();          // Medical Record Number shown to staff, e.g. CF-000123
+            $table->string('mrn', 20)->nullable()->unique(); // Medical Record Number, e.g. CF-000123 (filled right after insert, from the id)
             $table->string('full_name', 120);
             $table->date('date_of_birth')->index();        // indexed: duplicate check looks up by DOB
             $table->string('gender', 10);                  // male | female | other

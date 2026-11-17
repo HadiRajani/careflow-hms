@@ -16,7 +16,17 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
+            <div class="bg-amber-100 text-amber-900 text-xs text-center py-1">
+                {{ __('Demo system with synthetic data only. Not for clinical use.') }}
+            </div>
+
             @include('layouts.navigation')
+
+            @if (session('success'))
+                <div class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
+                    <div class="rounded bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">{{ session('success') }}</div>
+                </div>
+            @endif
 
             <!-- Page Heading -->
             @isset($header)
