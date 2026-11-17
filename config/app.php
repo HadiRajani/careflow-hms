@@ -84,6 +84,10 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+    // Password for the seeded demo accounts. Read through config (not env() in the seeder)
+    // because after `php artisan config:cache` in production, env() returns null.
+    'demo_password' => env('DEMO_PASSWORD'),
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

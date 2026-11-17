@@ -1,66 +1,137 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CareFlow HMS — OPD-to-Quality thin slice
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> ⚠️ **NOT FOR CLINICAL USE.** Demo system with **synthetic data only**. It has not been clinically validated, security-tested or certified, and must never hold real patient information.
 
-## About Laravel
+A patient arrives at the OPD, is **registered** (with duplicate detection), a **visit** is opened, a nurse records **triage** (vitals are scored and risky readings flagged automatically), and the activity appears on a **quality dashboard** for management. English / **Urdu** toggle on key screens.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Stack:** Laravel 12 · PHP 8.2 · MySQL 8 · Blade · Tailwind CSS · PHPUnit
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| | |
+|---|---|
+| Live app | _add Railway URL after deploy_ |
+| Demo password (all accounts) | `CareFlow2026!` (synthetic demo accounts only) |
+| Front desk | `frontdesk@careflow.test` |
+| Nurse | `nurse@careflow.test` |
+| Quality manager | `quality@careflow.test` |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 1. Run it locally
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Requirements: PHP 8.2+, Composer, Node 20+, MySQL 8 (or MariaDB).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+git clone <repo-url> careflow-hms && cd careflow-hms
+composer install
+npm install && npm run build
+cp .env.example .env            # then set DB_* and DEMO_PASSWORD
+php artisan key:generate
+# create the database first: CREATE DATABASE careflow_hms CHARACTER SET utf8mb4;
+php artisan migrate --seed      # tables + 3 demo users + ~600 synthetic visits (30 days)
+php artisan serve               # http://127.0.0.1:8000
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Run the tests (uses an in-memory SQLite database, never touches MySQL):
 
-## Laravel Sponsors
+```bash
+php artisan test
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Rebuild the demo data at any time: `php artisan migrate:fresh --seed`
 
-### Premium Partners
+## 2. Deploy (Railway)
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+The repo includes a `Dockerfile` (PHP 8.2 + Apache, assets built with Node) and `docker/start.sh`, which on every start runs migrations and the (repeat-safe) seeders.
 
-## Contributing
+1. Railway → **New project → Deploy from GitHub repo** (it detects the Dockerfile).
+2. Add a **MySQL** service to the project.
+3. In the app service → **Variables**, set:
+   ```
+   APP_NAME="CareFlow HMS"   APP_ENV=production   APP_DEBUG=false
+   APP_KEY=<output of: php artisan key:generate --show>
+   APP_URL=https://<your-app>.up.railway.app
+   APP_TIMEZONE=Asia/Karachi   LOG_CHANNEL=stderr   SESSION_ENCRYPT=true
+   DB_CONNECTION=mysql
+   DB_HOST=${{MySQL.MYSQLHOST}}  DB_PORT=${{MySQL.MYSQLPORT}}  DB_DATABASE=${{MySQL.MYSQLDATABASE}}
+   DB_USERNAME=${{MySQL.MYSQLUSER}}  DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+   DEMO_PASSWORD=<choose one>
+   ```
+4. **Settings → Networking → Generate domain.**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+> **Deployment status (honest):** the Docker image was written but **not built locally** (Docker is not installed on the development machine). First deploy must be verified on Railway.
 
-## Code of Conduct
+## 3. Architecture
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```
+Browser (Blade + Tailwind, no SPA)
+   │  HTTPS, session cookie, CSRF token
+   ▼
+Laravel 12 (one app)
+   ├─ middleware:  web (session, CSRF) → SetLocale (en/ur) → auth → role:<roles>
+   ├─ controllers: Patient · Visit · Triage · Dashboard · AuditLog · Language
+   ├─ services:    DuplicatePatientChecker (duplicate rule) · TriageScorer (NEWS2 rule)
+   └─ AuditLog::record(...) on every patient view / change
+   ▼
+MySQL 8  (users · patients · visits · triages · audit_logs)
+```
 
-## Security Vulnerabilities
+A deliberately simple **monolith**: server-rendered pages, no API, no queue, no external services. Business rules live in two small, unit-tested service classes so they can later be reused by other channels (SMS/USSD, API).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 4. Data model
 
-## License
+| Table | Key columns | Notes |
+|---|---|---|
+| `users` | name, email, password (bcrypt), **role** | role = `front_desk` \| `nurse` \| `quality_manager` (plain text; not mass-assignable) |
+| `patients` | mrn (CF-000123), full_name, date_of_birth, gender, phone, cnic | phone normalised `03XXXXXXXXX`; **indexes** on phone & DOB for the duplicate check; **cnic unique** |
+| `visits` | patient_id, **arrived_at**, status (waiting/triaged), created_by | arrived_at starts the wait clock |
+| `triages` | visit_id (unique), 12 fields, news2_score, risk_level, flags (JSON), recorded_by, recorded_at | score/flags computed on the server only |
+| `audit_logs` | user_id, action, patient_id, subject, meta, ip_address, created_at | append-only (no `updated_at`; model blocks update/delete) |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**The 12 triage fields:** BP (systolic/diastolic), pulse, temperature, SpO2, respiratory rate, consciousness (AVPU), chief complaint, pain score, allergies, fall risk, recorded by, recorded at. The nurse **types 7**; 3 are **one-tap with safe defaults** (Alert, NKDA, low fall risk); the last 2 are **automatic**.
+
+## 5. Clinical rules (and where they come from)
+
+**Triage flags — NEWS2**, Royal College of Physicians (London), 2017. Each vital scores 0–3; the total gives risk:
+
+| Risk | Rule (RCP clinical-response thresholds) |
+|---|---|
+| High | total ≥ 7 |
+| Medium | total 5–6, **or** any single parameter scoring 3 |
+| Low | otherwise |
+
+Extra flag outside NEWS2: **hypertensive crisis** (systolic ≥ 180 or diastolic ≥ 120, 2017 ACC/AHA guideline) → at least medium risk. Code: `app/Services/TriageScorer.php`.
+
+**Validation vs flagging.** Physiologically *impossible* values are **rejected** on the server (pulse 20–250, SpO2 50–100 %, temp 30–45 °C, RR 4–60, systolic 50–260, diastolic 20–160 and below systolic). *Abnormal but possible* values are **accepted and flagged**.
+
+**Duplicate detection** (`app/Services/DuplicatePatientChecker.php`): same CNIC → **blocked**. Same phone **or** same DOB **and** name ≥ 80 % similar (word order ignored) → **warning**; staff may override, and the override is audited. Same phone alone is *not* a duplicate — families often share one phone. Threshold chosen by measuring real name pairs (Muhammad/Mohammad 92 %, Ayesha/Aisha 86 %, family members 57–67 %).
+
+## 6. Security & privacy built in
+
+- Login only (Breeze, trimmed): **no public registration**, no self-service account deletion; login rate-limited (5 attempts).
+- **Role checks on the server** (`EnsureRole` middleware → 403), proven by tests that call every URL as every role.
+- **Audit trail** of patient searches, views, registrations (incl. duplicate overrides), visits and triage.
+- Least privilege: the quality manager sees aggregates and the audit log, **not** individual records; staff see no patient list until they search.
+- **No patient data leaves the server**: no third-party AI, speech or analytics; dashboard insights are rule-based. (Only Google Fonts are loaded — fonts, no data.)
+- Secrets only in environment variables (`.env` is git-ignored); sessions encrypted; HTTPS forced in production; CSRF on all forms.
+
+## 7. Known limitations — not production-ready
+
+- **Clinical:** NEWS2 is validated for adults only (a warning shows for under-16s); no supplemental-oxygen or SpO2 scale-2 handling; not reviewed by a clinician.
+- **Duplicate detection:** string similarity only (no phonetic matching); names must be typed in English letters; no merge or edit of patient records.
+- **Security:** no MFA, no password reset, no admin screen for accounts (seeded only); audit log is tamper-resistant in the app but not at database level; no penetration test; `trustProxies('*')` assumes the app is only reachable through the platform's proxy.
+- **Privacy/compliance:** no data-retention policy, consent capture, encryption-at-rest configuration or backup/restore procedure.
+- **Scale:** dashboard calculates in PHP over the period's visits (fine for one hospital); single hospital, no `hospital_id`.
+- **Urdu:** translations are AI-drafted and need review by a native speaker with clinical vocabulary; dashboard and audit screens are English-only.
+- **Ops:** no monitoring, alerting or CI pipeline; Docker image not built locally.
+
+## 8. Project documents
+
+- [DECISIONS.md](DECISIONS.md) — stakeholder conflicts, what was cut, top 5 risks
+- [AI_LOG.md](AI_LOG.md) — key prompts, where the AI was wrong, what I decided
+- [ROADMAP.md](ROADMAP.md) — 90 days to a pilot, then 10 hospitals + community care
+
+## 9. Time log
+
+| Session | Date | Start – end (PKT, approx.) | Work |
+|---|---|---|---|
+| 1 | 17 Nov 2026 | 19:55 – 22:50 | Requirements analysis, setup (MySQL + Composer issues ≈ 30 min), all blocks, tests, docs |

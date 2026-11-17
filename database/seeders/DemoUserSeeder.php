@@ -7,13 +7,13 @@ use Illuminate\Database\Seeder;
 
 /**
  * Creates one demo login per role.
- * The password comes from DEMO_PASSWORD in .env, so it is not written in the code.
+ * The password comes from DEMO_PASSWORD in .env (via config/app.php), so it is not written in the code.
  */
 class DemoUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('DEMO_PASSWORD');
+        $password = config('app.demo_password');   // from DEMO_PASSWORD in .env
 
         if (empty($password)) {
             throw new \RuntimeException('Set DEMO_PASSWORD in .env before seeding demo users.');
