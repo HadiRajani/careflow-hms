@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            // One role per user: front_desk | nurse | quality_manager (see App\Enums\Role).
+            // One role per user, plain text: 'front_desk' | 'nurse' | 'quality_manager'
             $table->string('role', 32)->index();
             $table->rememberToken();
             $table->timestamps();

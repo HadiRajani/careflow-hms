@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * One demo account per role. Password comes from the DEMO_PASSWORD env var,
- * so no credential is hard-coded in the repository.
+ * Creates one demo login per role.
+ * The password comes from DEMO_PASSWORD in .env, so it is not written in the code.
  */
 class DemoUserSeeder extends Seeder
 {
@@ -16,21 +15,23 @@ class DemoUserSeeder extends Seeder
     {
         $password = env('DEMO_PASSWORD');
 
-        if (blank($password)) {
+        if (empty($password)) {
             throw new \RuntimeException('Set DEMO_PASSWORD in .env before seeding demo users.');
         }
 
         $accounts = [
-            ['Sana Front Desk', 'frontdesk@careflow.test', Role::FrontDesk],
-            ['Nurse Amina', 'nurse@careflow.test', Role::Nurse],
-            ['Dr. Farah (Quality)', 'quality@careflow.test', Role::QualityManager],
+            // name                   email                       role
+            ['Sana Front Desk',     'frontdesk@careflow.test', 'front_desk'],
+            ['Nurse Amina',         'nurse@careflow.test',     'nurse'],
+            ['Dr. Farah (Quality)', 'quality@careflow.test',   'quality_manager'],
         ];
 
-        foreach ($accounts as [$name, $email, $role]) {
-            $user = User::firstOrNew(['email' => $email]);
-            $user->name = $name;
-            $user->password = $password;          // hashed automatically by the 'hashed' cast
-            $user->role = $role;                  // set explicitly: role is not mass-assignable
+        foreach ($accounts as $account) {
+            // Find by email, or start a new user (so running the seeder twice never duplicates).
+            $user = User::firstOrNew(['email' => $account[1]]);
+            $user->name = $account[0];
+            $user->password = $password;     // hashed automatically
+            $user->role = $account[2];       // set directly, because role is not in $fillable
             $user->email_verified_at = now();
             $user->save();
         }

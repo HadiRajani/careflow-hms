@@ -4,45 +4,33 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): View
+    // GET /login -> show the login form
+    public function create()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
+    // POST /login -> check email + password, then send the user to their role's page
+    public function store(LoginRequest $request)
     {
-        $request->authenticate();
+        $request->authenticate();            // checks password + blocks after 5 wrong tries (see LoginRequest)
+        $request->session()->regenerate();   // new session id after login (security best practice)
 
-        $request->session()->regenerate();
-
-        // Each role lands on the one screen it needs (nurse -> triage queue, etc.).
-        return redirect()->intended(route($request->user()->role->homeRoute(), absolute: false));
+        return redirect($request->user()->homePage());   // nurse -> /triage, etc.
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
+    // POST /logout -> end the session completely
+    public function destroy(Request $request)
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect('/login');
     }
 }

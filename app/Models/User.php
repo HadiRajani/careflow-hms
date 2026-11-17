@@ -2,55 +2,64 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Enums\Role;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * A staff member who can log in.
+ *
+ * The `role` column is plain text. There are only three possible values:
+ *   'front_desk'       -> registers patients and opens visits
+ *   'nurse'            -> registers patients, opens visits and does triage
+ *   'quality_manager'  -> sees the dashboard and audit log
+ */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * 'role' is deliberately NOT mass assignable, so no form request can ever
-     * escalate a user's privileges. Roles are set explicitly (seeder / admin only).
-     *
-     * @var list<string>
-     */
+    // Fields a form is allowed to fill. 'role' is NOT here on purpose:
+    // nobody can make themselves a quality manager by adding role=... to a form.
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'role' => Role::class,
+            'password' => 'hashed',   // saving a password automatically stores a bcrypt hash
         ];
     }
 
-    public function hasRole(Role ...$roles): bool
+    /**
+     * The page each role should see right after login.
+     */
+    public function homePage(): string
     {
-        return in_array($this->role, $roles, true);
+        if ($this->role === 'nurse') {
+            return '/triage';
+        }
+
+        if ($this->role === 'quality_manager') {
+            return '/dashboard';
+        }
+
+        return '/patients';   // front_desk
+    }
+
+    /**
+     * Readable role name for the screen, e.g. 'front_desk' -> 'Front Desk'.
+     */
+    public function roleName(): string
+    {
+        return ucwords(str_replace('_', ' ', $this->role));
     }
 }

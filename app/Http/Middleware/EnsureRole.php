@@ -4,24 +4,26 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Server-side role check. Usage in routes: ->middleware('role:nurse,front_desk')
+ * Checks the logged-in user's role BEFORE the page runs.
  *
- * Hiding a menu link is only UX; this middleware is the actual security boundary.
- * A user without an allowed role gets HTTP 403 even if they type the URL directly.
+ * In routes/web.php we write:   ->middleware('role:front_desk,nurse')
+ * Laravel then calls:            handle($request, $next, 'front_desk', 'nurse')
+ * so $allowedRoles becomes:      ['front_desk', 'nurse']
+ *
+ * This is the real security check. Hiding menu links is only for convenience.
  */
 class EnsureRole
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    public function handle(Request $request, Closure $next, ...$allowedRoles)
     {
-        $user = $request->user();
+        $userRole = $request->user()->role;   // e.g. 'nurse'
 
-        if (! $user || ! in_array($user->role->value, $roles, true)) {
+        if (! in_array($userRole, $allowedRoles)) {
             abort(403, 'Your role does not have access to this page.');
         }
 
-        return $next($request);
+        return $next($request);   // role is allowed -> continue to the page
     }
 }

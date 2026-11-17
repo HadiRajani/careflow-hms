@@ -2,70 +2,70 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * Proves role checks are enforced on the SERVER: each role hitting a URL directly,
- * with no menu link involved, gets 200 or 403 as the access map says.
+ * Proves role checks happen on the SERVER: each role opens each URL directly
+ * (no menu involved) and gets 200 (allowed) or 403 (forbidden).
  */
 class RoleAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    public static function accessMatrix(): array
+    public function test_front_desk_access(): void
     {
-        // [role, url, expected HTTP status]
-        return [
-            'front desk can open patients'      => [Role::FrontDesk, '/patients', 200],
-            'front desk cannot triage'          => [Role::FrontDesk, '/triage', 403],
-            'front desk cannot see dashboard'   => [Role::FrontDesk, '/dashboard', 403],
-            'front desk cannot see audit log'   => [Role::FrontDesk, '/audit', 403],
+        $user = User::factory()->create(['role' => 'front_desk']);
 
-            'nurse can open patients'           => [Role::Nurse, '/patients', 200],
-            'nurse can open triage queue'       => [Role::Nurse, '/triage', 200],
-            'nurse cannot see dashboard'        => [Role::Nurse, '/dashboard', 403],
-            'nurse cannot see audit log'        => [Role::Nurse, '/audit', 403],
-
-            'quality manager sees dashboard'    => [Role::QualityManager, '/dashboard', 200],
-            'quality manager sees audit log'    => [Role::QualityManager, '/audit', 200],
-            'quality manager cannot triage'     => [Role::QualityManager, '/triage', 403],
-            'quality manager cannot register'   => [Role::QualityManager, '/patients', 403],
-        ];
+        $this->actingAs($user)->get('/patients')->assertStatus(200);
+        $this->actingAs($user)->get('/triage')->assertStatus(403);
+        $this->actingAs($user)->get('/dashboard')->assertStatus(403);
+        $this->actingAs($user)->get('/audit')->assertStatus(403);
     }
 
-    #[DataProvider('accessMatrix')]
-    public function test_role_access_is_enforced_server_side(Role $role, string $url, int $expected): void
+    public function test_nurse_access(): void
     {
-        $user = User::factory()->role($role)->create();
+        $user = User::factory()->create(['role' => 'nurse']);
 
-        $this->actingAs($user)->get($url)->assertStatus($expected);
+        $this->actingAs($user)->get('/patients')->assertStatus(200);
+        $this->actingAs($user)->get('/triage')->assertStatus(200);
+        $this->actingAs($user)->get('/dashboard')->assertStatus(403);
+        $this->actingAs($user)->get('/audit')->assertStatus(403);
     }
 
-    public function test_guests_are_redirected_to_login(): void
+    public function test_quality_manager_access(): void
     {
-        foreach (['/patients', '/triage', '/dashboard', '/audit'] as $url) {
-            $this->get($url)->assertRedirect('/login');
-        }
+        $user = User::factory()->create(['role' => 'quality_manager']);
+
+        $this->actingAs($user)->get('/dashboard')->assertStatus(200);
+        $this->actingAs($user)->get('/audit')->assertStatus(200);
+        $this->actingAs($user)->get('/patients')->assertStatus(403);
+        $this->actingAs($user)->get('/triage')->assertStatus(403);
+    }
+
+    public function test_guests_are_sent_to_login(): void
+    {
+        $this->get('/patients')->assertRedirect('/login');
+        $this->get('/triage')->assertRedirect('/login');
+        $this->get('/dashboard')->assertRedirect('/login');
+        $this->get('/audit')->assertRedirect('/login');
     }
 
     public function test_public_registration_is_disabled(): void
     {
         $this->get('/register')->assertNotFound();
-        $this->post('/register', [
-            'name' => 'Intruder', 'email' => 'x@y.test',
-            'password' => 'secret123', 'password_confirmation' => 'secret123',
-        ])->assertNotFound();
+        $this->post('/register', ['name' => 'Intruder', 'email' => 'x@y.test', 'password' => 'secret123'])
+            ->assertNotFound();
     }
 
-    public function test_each_role_lands_on_its_home_after_login(): void
+    public function test_each_role_lands_on_its_own_page_after_login(): void
     {
-        $nurse = User::factory()->role(Role::Nurse)->create();
+        $nurse = User::factory()->create(['role' => 'nurse']);
+        $this->post('/login', ['email' => $nurse->email, 'password' => 'password'])->assertRedirect('/triage');
+        $this->post('/logout');
 
-        $this->post('/login', ['email' => $nurse->email, 'password' => 'password'])
-            ->assertRedirect('/triage');
+        $manager = User::factory()->create(['role' => 'quality_manager']);
+        $this->post('/login', ['email' => $manager->email, 'password' => 'password'])->assertRedirect('/dashboard');
     }
 }
