@@ -31,4 +31,7 @@ done
 
 php artisan db:seed --force
 
+# Safety net: Apache must load exactly one MPM (prefork, for mod_php).
+rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*
+
 exec apache2-foreground
