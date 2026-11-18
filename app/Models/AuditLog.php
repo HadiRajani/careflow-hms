@@ -41,6 +41,15 @@ class AuditLog extends Model
         ]);
     }
 
+    /**
+     * Readable name for an action code, for display only.
+     * 'patient.searched' -> 'Patient Searched'. The database keeps the code.
+     */
+    public static function actionLabel(string $action): string
+    {
+        return ucwords(str_replace(['.', '_'], ' ', $action));
+    }
+
     // Safety net: block editing or deleting audit rows through the app.
     protected static function booted(): void
     {

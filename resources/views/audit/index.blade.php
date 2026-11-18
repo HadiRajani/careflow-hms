@@ -12,7 +12,7 @@
             <select name="action" class="rounded-lg border-gray-300 text-sm focus:border-teal-500 focus:ring-teal-500">
                 <option value="">All actions</option>
                 @foreach ($actions as $action)
-                    <option value="{{ $action }}" @selected(request('action') === $action)>{{ $action }}</option>
+                    <option value="{{ $action }}" @selected(request('action') === $action)>{{ \App\Models\AuditLog::actionLabel($action) }}</option>
                 @endforeach
             </select>
             <button class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-white">Filter</button>
@@ -41,7 +41,7 @@
                                 {{ $log->user?->name ?? '—' }}
                                 @if ($log->user)<span class="text-xs text-gray-400">({{ $log->user->roleName() }})</span>@endif
                             </td>
-                            <td class="px-4 py-2"><span class="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs">{{ $log->action }}</span></td>
+                            <td class="px-4 py-2"><span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium">{{ \App\Models\AuditLog::actionLabel($log->action) }}</span></td>
                             <td class="px-4 py-2 font-mono text-xs">{{ $log->patient?->mrn ?? '—' }}</td>
                             <td class="px-4 py-2 text-xs text-gray-500">
                                 @if ($log->meta)

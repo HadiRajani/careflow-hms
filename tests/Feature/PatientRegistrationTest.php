@@ -103,6 +103,19 @@ class PatientRegistrationTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'patient.viewed', 'patient_id' => $patient->id, 'user_id' => $user->id]);
     }
 
+    public function test_audit_page_shows_readable_action_names(): void
+    {
+        $this->actingAs($this->frontDesk())->get('/patients/' . Patient::factory()->create()->id);
+
+        $manager = User::factory()->create(['role' => 'quality_manager']);
+        $this->actingAs($manager)->get('/audit')
+            ->assertOk()
+            ->assertSee('Patient Viewed')
+            ->assertDontSee('>patient.viewed<', false);   // code stays in the database, not on screen
+
+        $this->assertSame('Patient Searched', AuditLog::actionLabel('patient.searched'));
+    }
+
     public function test_audit_log_rows_cannot_be_changed(): void
     {
         $this->actingAs($this->frontDesk())->get('/patients/' . Patient::factory()->create()->id);
