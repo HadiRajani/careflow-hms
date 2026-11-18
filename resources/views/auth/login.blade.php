@@ -27,12 +27,12 @@
     </form>
 
     {{-- Demo accounts: shown only outside production-like "real" use; this is a synthetic-data demo. --}}
-    <div class="mt-6 rounded-lg bg-slate-50 p-4 text-xs text-gray-600" dir="ltr">
+    {{-- <div class="mt-6 rounded-lg bg-slate-50 p-4 text-xs text-gray-600" dir="ltr">
         <div class="mb-2 font-semibold text-gray-700">Demo accounts (password in README)</div>
         <ul class="space-y-1 font-mono">
             <li>frontdesk@careflow.test <span class="text-gray-400">— Front Desk</span></li>
             <li>nurse@careflow.test <span class="text-gray-400">— Nurse</span></li>
             <li>quality@careflow.test <span class="text-gray-400">— Quality Manager</span></li>
         </ul>
-    </div>
+    </div> --}}
 </x-guest-layout>

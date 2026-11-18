@@ -29,7 +29,7 @@
             </div>
 
             <p class="mt-6 max-w-md text-center text-xs text-amber-800">
-                {{ __('Demo system with synthetic data only. Not for clinical use.') }}
+                {{-- {{ __('Demo system with synthetic data only. Not for clinical use.') }} --}}
             </p>
         </div>
     </body>
