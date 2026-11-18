@@ -13,7 +13,16 @@ php artisan view:cache
 
 # Create/upgrade tables. Seeding is safe to repeat:
 # demo users are updated in place, synthetic data is skipped if patients already exist.
-php artisan migrate --force
+# The database may still be starting: retry for up to ~60 seconds before giving up.
+echo "Database host: ${DB_HOST:-<not set>}"
+for i in $(seq 1 30); do
+    if php artisan migrate --force; then
+        break
+    fi
+    echo "Database not ready yet (attempt $i/30), retrying in 2s..."
+    sleep 2
+done
+
 php artisan db:seed --force
 
 exec apache2-foreground
