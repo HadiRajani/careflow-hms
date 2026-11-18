@@ -8,7 +8,8 @@ A patient arrives at the OPD, is **registered** (with duplicate detection), a **
 
 | | |
 |---|---|
-| Live app | _add Railway URL after deploy_ |
+| Live app | **https://careflow-hms-production.up.railway.app** |
+| Repository | https://github.com/HadiRajani/careflow-hms |
 | Demo password (all accounts) | `CareFlow2026!` (synthetic demo accounts only) |
 | Front desk | `frontdesk@careflow.test` |
 | Nurse | `nurse@careflow.test` |
@@ -58,7 +59,12 @@ The repo includes a `Dockerfile` (PHP 8.2 + Apache, assets built with Node) and 
    ```
 4. **Settings → Networking → Generate domain.**
 
-> **Deployment status (honest):** the Docker image was written but **not built locally** (Docker is not installed on the development machine). First deploy must be verified on Railway.
+> **Deployment status:** live on Railway (PHP 8.2 + Apache container, Railway MySQL). `railway.json` forces the Dockerfile builder.
+>
+> **Issues hit on first deploy (and fixes):**
+> - App connected to `127.0.0.1` → Railway had applied variables imported from `.env.example`, not the database references; fixed in Railway's variable settings. `docker/start.sh` now logs the DB host it uses and retries the connection for ~60 s.
+> - `DEMO_PASSWORD` not found → seeder reads it via `config()` (`env()` returns null after `config:cache`).
+> - Apache `More than one MPM loaded` → image keeps only `mpm_prefork` (required by mod_php).
 
 ## 3. Architecture
 
