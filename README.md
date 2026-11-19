@@ -77,7 +77,4 @@ The two rules that matter most (duplicate detection and triage scoring) live in 
 
 ## Time log
 
-| Session | Date | Time (PKT) | What |
-|---|---|---|---|
-| 1 | 17 Nov 2026 | 19:55 – 22:50 | Setup, all features, tests, docs |
-| 2 | 18 Nov 2026 | _fill in_ | Code walkthrough, Railway deployment |
+See [TIMELOG.md](TIMELOG.md).
