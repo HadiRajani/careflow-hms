@@ -8,6 +8,7 @@ Built with Laravel 12, PHP 8.2, MySQL 8, Blade and Tailwind.
 
 - Live: https://careflow-hms-production.up.railway.app
 - Repo: https://github.com/HadiRajani/careflow-hms
+- Video walkthrough: https://www.loom.com/share/69da647ffdc54fe380c669422f1db48c
 
 Demo logins (password `CareFlow2026!` for all):
 
